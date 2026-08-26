@@ -12,12 +12,22 @@ MY_IP = "92.101.71.197"
 
 logging.basicConfig(level=logging.INFO)
 
+EXCLUDED_USERS = [
+    5268292847,   # Мама
+    5318344748,   # Анастасия Игоревна
+    1016164154,   # Армася
+    1785437636,   # Леся
+    -4083558444,  # Большая семья
+    -4782064976,  # Мальчики 76
+    -5140521238,  # Технология 7 «Б»
+    -4581539600,  # Ещё одна группа
+]
+
 def is_telegram_ip(ip):
     return ip.startswith('149.154.') or ip.startswith('91.108.')
 
-# ===== СТУЧАЛКА (каждые 30 секунд) =====
 def self_ping():
-    url = "https://lord-sluga.onrender.com"  # Замени на свой Render-адрес
+    url = "https://slugalorda.onrender.com"
     while True:
         try:
             requests.get(url)
@@ -28,7 +38,6 @@ def self_ping():
 
 threading.Thread(target=self_ping, daemon=True).start()
 
-# ===== WEBHOOK =====
 @app.route('/webhook', methods=['POST'])
 def webhook():
     ip = request.remote_addr
@@ -43,13 +52,26 @@ def webhook():
 
     data = request.get_json()
     chat_id = data['message']['chat']['id']
+    sender_id = data['message']['from']['id']
     text = data['message'].get('text', '')
 
-    reply = """эⲧⲟ ⲥⲗⲩⲅⲁ ŁØŘĐŠĦΔĐØŴ Ø₣₣ƗĈƗΔŁ ! Я ⲩⲿⲉ ⳝⲉⲅⲩ ⲕ ⲗⲟⲣⲇⲩ, ⳡⲧⲟⳝы ⲥⲟⲟⳝպυⲧь ⲟ ⲧⲃⲟⲉⲙ ⲃυⳅυⲧⲉ! ⲡⲟⲿⲁⲗⲩύⲥⲧⲁ ⲡⲟⲇⲟⲿⲇυ ⲉⲅⲟ ⲟⲧⲃⲉⲧⲁ!!! ⳝⲗⲁⲅⲟⲇⲁⲣю ⳅⲁ ⲃⲁⲱ ⲃυⳅυⲧ!!"""
+    if sender_id in EXCLUDED_USERS:
+        logging.info(f'Сообщение от исключённого пользователя {sender_id} — игнорируем')
+        return "OK", 200
+
+    if text == '/start':
+        active = True
+        reply = "✅ Слуга активирован"
+    elif text == '/stop':
+        active = False
+        reply = "⏹️ Слуга отключён"
+    elif text == '/status':
+        reply = f"✅ Слуга активен: {active}"
+    else:
+        reply = """эⲧⲟ ⲥⲗⲩⲅⲁ ŁØŘĐŠĦΔĐØŴ Ø₣₣ƗĈƗΔŁ ! Я ⲩⲿⲉ ⳝⲉⲅⲩ ⲕ ⲗⲟⲣⲇⲩ, ⳡⲧⲟⳝы ⲥⲟⲟⳝպυⲧь ⲟ ⲧⲃⲟⲉⲙ ⲃυⳅυⲧⲉ! ⲡⲟⲿⲁⲗⲩύⲥⲧⲁ ⲡⲟⲇⲟⲿⲇυ ⲉⲅⲟ ⲟⲧⲃⲉⲧⲁ!!! ⳝⲗⲁⲅⲟⲇⲁⲣю ⳅⲁ ⲃⲁⲱ ⲃυⳅυⲧ!!"""
 
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     requests.post(url, json={'chat_id': chat_id, 'text': reply})
-
     logging.info(f'Ответ отправлен в чат {chat_id}')
     return "OK", 200
 
