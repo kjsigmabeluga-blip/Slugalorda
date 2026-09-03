@@ -12,15 +12,25 @@ SECRET_KEY = "LordSlugaSuperSecretKey123"
 active = True
 logging.basicConfig(level=logging.INFO)
 
-EXCLUDED_USERS = [5268292847, 5318344748, 1016164154, 1785437636, -4083558444, -4782064976, -5140521238, -4581539600]
+EXCLUDED_USERS = [
+    5268292847,
+    5318344748,
+    1016164154,
+    1785437636,
+    -4083558444,
+    -4782064976,
+    -5140521238,
+    -4581539600,
+]
 
 def self_ping():
     url = "https://slugalorda.onrender.com"
     while True:
         try:
             requests.get(url)
+            logging.info("Пинг отправлен")
         except:
-            pass
+            logging.warning("Ошибка пинга")
         time.sleep(30)
 
 threading.Thread(target=self_ping, daemon=True).start()
@@ -29,8 +39,7 @@ threading.Thread(target=self_ping, daemon=True).start()
 def webhook():
     global active
 
-    # Проверка секретного ключа
-    secret = request.headers.get('X-Secret-Key')
+    secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token')
     if secret != SECRET_KEY:
         abort(403)
 
@@ -62,11 +71,12 @@ def webhook():
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     requests.post(url, json={'chat_id': chat_id, 'text': reply})
 
+    logging.info(f'Ответ отправлен в чат {chat_id}')
     return "OK", 200
 
 @app.route('/')
 def home():
-    return "Слуга активен"
+    return "Слуга активен и защищён"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
